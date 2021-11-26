@@ -14,12 +14,18 @@ public struct GamesResponse: Codable {
     public let results: [Game]
 }
 
-public struct Game: Codable, Identifiable {
+public struct Game: Codable, Identifiable, Equatable {
+    public static func == (lhs: Game, rhs: Game) -> Bool {
+        return lhs.id ==  rhs.id
+    }
+    
     public let id: Int
     public let name: String
     public let platforms: [PlatformContainer]
     public let background_image: String?
     public let released: String?
+    public let rating: Float?
+    public let metacritic: Int?
 }
 
 public struct PlatformContainer: Codable {

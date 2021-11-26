@@ -29,13 +29,24 @@ class DataService: DataServiceable {
         let endpoint = DataServiceEndpoints.searchGames(request: request)
         let request = endpoint.createRequest(queryItems:
                                                 [URLQueryItem(name: "key", value: apiKey),
-                                                 URLQueryItem(name: "search", value: request.name)],
+                                                 URLQueryItem(name: "search", value: request.name),
+                                                 URLQueryItem(name: "search_exact", value: "true"),
+                                                 URLQueryItem(name: "platforms", value: "1,4,18,187")],
                                              rawg: self.rawg)
         return self.networkRequest.request(request)
     }
   
+    func fetchNextPageGames(request: NextPageGamesRequest) -> AnyPublisher<GamesResponse, NetworkError> {
+        let endpoint = DataServiceEndpoints.fetchNextPageGames
+        let request = endpoint.createRequest(nextPageUrl: request.url)
+        return self.networkRequest.request(request)
+    }
 }
 
 public struct GameRequest: Encodable {
     public let name: String
+}
+
+public struct NextPageGamesRequest: Encodable {
+    public let url: String
 }

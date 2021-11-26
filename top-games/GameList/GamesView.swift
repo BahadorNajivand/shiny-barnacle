@@ -9,7 +9,7 @@ import SwiftUI
 struct GamesView: View {
     
     @StateObject var viewModel: ViewModel
-    
+
     init(viewModel: ViewModel = .init()) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
@@ -19,9 +19,12 @@ struct GamesView: View {
             List{
                 searchField
                 gamesSection
+                if viewModel.isLoading {
+                    loadingIndicator
+                }
             }
             .listStyle(GroupedListStyle())
-            .navigationTitle("Game")
+            .navigationTitle("Search a Game")
         }
         //.onAppear(perform: )
     }
@@ -38,20 +41,28 @@ private extension GamesView {
     var gamesSection: some View {
         Section {
             ForEach(viewModel.games){ game in
-                Text(game.name)
-                    .padding()
+                GameCardView(imageUrlString: game.background_image, releasedDate: game.released, title: game.name, platforms: game.platforms, rating: game.rating, metacritic: game.metacritic)
+                    .onAppear {
+                        if viewModel.games.last == game {
+                            viewModel.fetchNextPageIfPossible()
+                        }
+                    }
             }
         }
+    }
+    
+    var loadingIndicator: some View {
+        Spinner(style: .medium)
+            .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .center)
     }
 }
 
 struct GamesView_Previews: PreviewProvider {
     static var previews: some View {
-        //let game = Game(name: "Sample", platforms: [PlatformContainer](), released: nil, rating: nil, metacritic: nil, background_image: nil, id: 1, score: nil, genres: [Genre]())
+        let game = Game(id: 1, name: "Sample", platforms: [PlatformContainer](), background_image: nil, released: nil, rating: nil, metacritic: nil)
         let viewModel = GamesView.ViewModel()
-        viewModel.games = [Game]()
+        viewModel.games = [game]
         
         return GamesView(viewModel: viewModel)
     }
 }
-

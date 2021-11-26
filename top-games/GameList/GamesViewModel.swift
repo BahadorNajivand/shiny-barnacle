@@ -14,10 +14,12 @@ extension GamesView {
         
         @Published var games = [Game]()
         @Published var searchedName: String = ""
+        @Published var isLoading = false
         
         private let networkService: NativeRequestable
         
         private var disposables = Set<AnyCancellable>()
+        private var nextPageUrl: String?
         
         init(networkService: NativeRequestable = NativeRequestable(),
              scheduler: DispatchQueue = DispatchQueue(label: "GamesViewModel")) {
@@ -26,9 +28,9 @@ extension GamesView {
             
             $searchedName
               // 3
-              .dropFirst(1)
+              .dropFirst(4)
               // 4
-              .debounce(for: .seconds(0.5), scheduler: scheduler)
+              .debounce(for: .seconds(0.8), scheduler: scheduler)
               // 5
               .sink(receiveValue: fetchGames(gameName:))
               // 6
@@ -50,16 +52,42 @@ extension GamesView {
                         print("nothing much to do here")
                     }
                 } receiveValue: { (response) in
-                    self.games = response.results
-                    print("got my response here \(response)")
+                    DispatchQueue.main.async {
+                        self.games = response.results
+                        self.nextPageUrl = response.next
+                        self.isLoading = response.next == nil ? false : true
+                    }
                 }
                 .store(in: &disposables)
         }
-    }
-}
+        
+        func fetchNextPageIfPossible() {
+            
+            guard let url = nextPageUrl else {
+                return
+            }
+            
+            let nextPageGamesRequest = NextPageGamesRequest(url: url)
+            
+            let service = DataService(networkRequest: NativeRequestable(), rawg: .development)
+            
+            service.fetchNextPageGames(request: nextPageGamesRequest)
+                .sink { (completion) in
+                    switch completion {
+                    case .failure(let error):
+                        print("oops got an error \(error.localizedDescription)")
+                    case .finished:
+                        print("nothing much to do here")
+                    }
+                } receiveValue: { (response) in
+                    DispatchQueue.main.async {
+                        self.games += response.results
+                        self.nextPageUrl = response.next
+                        self.isLoading = response.next == nil ? false : true
+                    }
+                }
+                .store(in: &disposables)
 
-struct GameViewModel_Previews: PreviewProvider {
-    static var previews: some View {
-        /*@START_MENU_TOKEN@*/Text("Hello, World!")/*@END_MENU_TOKEN@*/
+         }
     }
 }

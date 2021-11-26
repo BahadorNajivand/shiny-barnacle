@@ -14,6 +14,7 @@ enum DataServiceEndpoints {
 
   // organise all the end points here for clarity
     case searchGames(request: GameRequest)
+    case fetchNextPageGames
     
   // gave a default timeout but can be different for each.
     var requestTimeOut: Int {
@@ -25,6 +26,8 @@ enum DataServiceEndpoints {
         switch self {
         case .searchGames:
             return .GET
+        case .fetchNextPageGames:
+            return .GET
         }
     }
     
@@ -35,6 +38,12 @@ enum DataServiceEndpoints {
         var urlComponents = URLComponents(string: getURL(from: rawg))!
         urlComponents.queryItems = queryItems
         return NetworkRequest(url: urlComponents.url!.absoluteString, headers: headers, reqBody: requestBody, httpMethod: httpMethod)
+    }
+    
+    func createRequest(nextPageUrl: String) -> NetworkRequest {
+        var headers: Headers = [:]
+        headers["Content-Type"] = "application/json"
+        return NetworkRequest(url: nextPageUrl, headers: headers, reqBody: requestBody, httpMethod: httpMethod)
     }
     
   // encodable request body for POST
@@ -49,8 +58,10 @@ enum DataServiceEndpoints {
     func getURL(from rawg: RAWG) -> String {
         let baseUrl = rawg.dataServiceBaseUrl
         switch self {
-        case .searchGames:
-            return "\(baseUrl)/games"
+            case .searchGames:
+                return "\(baseUrl)/games"
+        default:
+            return ""
         }
     }
 }
